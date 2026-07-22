@@ -22,7 +22,7 @@ def init_db():
     cursor = conn.cursor()
 
     # Create the tables if they don't exist
-    cursor.executesript("""
+    cursor.executescript("""
         CREATE TABLE IF NOT EXISTS volcanoes (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
             name        TEXT    NOT NULL,
