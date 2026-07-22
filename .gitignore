@@ -1,0 +1,27 @@
+# Environment
+.env
+__pycache__/
+*.pyc
+*.pyo
+
+# Database
+data/vraip.db 
+
+# Downloaded PDF files
+data/bulletins/
+
+# Virtual environment
+venv/
+.venv/
+
+# Database files
+*.db
+*.sqlite3
+
+# Log files
+*.log
+
+# Scrapper temporary files
+data/*.pdf 
+data/*.png
+
