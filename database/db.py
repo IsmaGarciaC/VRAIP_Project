@@ -43,12 +43,18 @@ def init_db():
         );
 
         CREATE TABLE IF NOT EXISTS classifications (
-            id            INTEGER PRIMARY KEY AUTOINCREMENT,
-            bulletin_id   INTEGER NOT NULL,
-            alert_level   TEXT    NOT NULL,
-            activity_type TEXT,
-            emissions_flag INTEGER DEFAULT 0,
-            classified_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+            bulletin_id           INTEGER NOT NULL,
+            alert_level           TEXT NOT NULL,
+            surface_activity      TEXT,
+            internal_activity     TEXT,
+            ash_emissions         INTEGER DEFAULT 0,
+            gas_emissions         INTEGER DEFAULT 0,
+            incandescence         INTEGER DEFAULT 0,
+            lahars_detected       INTEGER DEFAULT 0,
+            explosions_count      INTEGER DEFAULT 0,
+            max_column_height_m   INTEGER DEFAULT 0,
+            classified_at         TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (bulletin_id) REFERENCES bulletins(id)
         );
 
