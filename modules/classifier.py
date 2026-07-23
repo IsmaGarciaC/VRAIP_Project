@@ -26,18 +26,23 @@ def classify_risk(raw_text):
 
     # 1. Official alert level
     alert_level = "Yellow Alert"  # Default level
+    alert_level_detected = False  # True only if a known keyword was actually matched
     # Supports line breaks
     alert_match = re.search(r'nivel de alerta\s*[-–:]*\s*(?:sgr)?:?[\s]*([a-záéíóú]+)', text_lower)
     if alert_match:
         raw_alert = alert_match.group(1)
         if "roja" in raw_alert:
             alert_level = "Red Alert"
+            alert_level_detected = True
         elif "naranja" in raw_alert:
             alert_level = "Orange Alert"
+            alert_level_detected = True
         elif "amarilla" in raw_alert:
             alert_level = "Yellow Alert"
+            alert_level_detected = True
         elif "blanca" in raw_alert or "verde" in raw_alert:
             alert_level = "Green Alert"
+            alert_level_detected = True
 
     # 2. Activity levels
     surface_act = "Not Specified"
@@ -78,6 +83,7 @@ def classify_risk(raw_text):
 
     return {
         "alert_level": alert_level,
+        "alert_level_detected": alert_level_detected,
         "surface_activity": surface_act,
         "internal_activity": internal_act,
         "ash_emissions": ash_flag,
@@ -94,23 +100,24 @@ def save_classification(bulletin_id, data):
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
 
-        # Update SQL to match the 9 extracted variables
+        # Update SQL to match the 10 extracted variables
         cursor.execute("""
             INSERT INTO classifications (
-                bulletin_id, alert_level, surface_activity, internal_activity, 
-                ash_emissions, gas_emissions, incandescence, lahars_detected, 
+                bulletin_id, alert_level, alert_level_detected, surface_activity, internal_activity,
+                ash_emissions, gas_emissions, incandescence, lahars_detected,
                 explosions_count, max_column_height_m
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-            bulletin_id, 
-            data["alert_level"], 
-            data["surface_activity"], 
+            bulletin_id,
+            data["alert_level"],
+            int(data["alert_level_detected"]),
+            data["surface_activity"],
             data["internal_activity"],
-            data["ash_emissions"], 
-            data["gas_emissions"], 
+            data["ash_emissions"],
+            data["gas_emissions"],
             data["incandescence"],
-            data["lahars_detected"], 
-            data["explosions_count"], 
+            data["lahars_detected"],
+            data["explosions_count"],
             data["max_column_height_m"]
         ))
 
