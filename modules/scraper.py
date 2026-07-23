@@ -124,7 +124,7 @@ def get_latest_bulletin(volcano_name):
         file_name = os.path.basename(newest_file)
 
         print(f"[+] Automated download successful: '{file_name}'!")
-        return newest_file, file_name
+        return newest_file, file_name, url
 
     # --- STEP 7: Error handling ---
     except Exception as e:
@@ -147,4 +147,4 @@ def use_fallback():
     print("[*] (Fallback) Emergency protocol activated: Using local test file.")
     fallback_name = "boletin_prueba.pdf"
     fallback_path = os.path.join(DATA_DIR, fallback_name)
-    return fallback_path, fallback_name
+    return fallback_path, fallback_name, "Local Fallback (boletin_prueba.pdf)"

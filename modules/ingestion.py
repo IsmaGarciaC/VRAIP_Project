@@ -27,7 +27,7 @@ def extract_text_from_pdf(pdf_path):
         raise Exception(f"Failed to extract text from {pdf_path}. Error: {e}")
 
 # Function to save extracted text to a SQLite database
-def save_bulletin_to_db(volcano_id, raw_text, pdf_filename):
+def save_bulletin_to_db(volcano_id, raw_text, pdf_filename, source_url):
     """
     Saves the extracted bulletin data to the SQLite database.
     """
@@ -37,7 +37,6 @@ def save_bulletin_to_db(volcano_id, raw_text, pdf_filename):
 
         # Save the exact date and time of extraction
         published_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        source_url = "Local Ingestion (Offline)"
 
         # Insert the data into the database
         cursor.execute("""
@@ -57,20 +56,20 @@ def save_bulletin_to_db(volcano_id, raw_text, pdf_filename):
         return None
 
 # Function to ingest a PDF file into the database
-def ingest_pdf(pdf_path, volcano_id):
+def ingest_pdf(pdf_path, volcano_id, source_url="Local Ingestion (Offline)"):
     """
     Master function to orchestrate text extraction and database ingestion.
     Returns the new bulletin_id if successful, None otherwise.
     """
     file_name = os.path.basename(pdf_path)
     print(f"[*] Extracting text from '{file_name}'...")
-    
+
     # Extract text from the PDF file
     try:
         raw_text = extract_text_from_pdf(pdf_path)
         print(f"[*] Text extracted successfully ({len(raw_text)} characters). Saving to DB...")
-        
-        bulletin_id = save_bulletin_to_db(volcano_id, raw_text, file_name)
+
+        bulletin_id = save_bulletin_to_db(volcano_id, raw_text, file_name, source_url)
         
         if bulletin_id:
             print(f"[+] Bulletin ingested correctly in table 'bulletins' with ID: {bulletin_id}")

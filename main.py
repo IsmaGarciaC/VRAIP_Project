@@ -21,14 +21,14 @@ def main():
     try:
         # --- ETAPA 1: RECOLECCIÓN (Scraping) ---
         print("\n[>>> ETAPA 1: RECOLECCIÓN DE DATOS <<<]")
-        pdf_path, pdf_name = get_latest_bulletin(volcano_name)
-        
+        pdf_path, pdf_name, source_url = get_latest_bulletin(volcano_name)
+
         if not pdf_path:
             raise Exception("El scraper no pudo obtener el documento.")
 
         # --- ETAPA 2: INGESTA (Procesamiento de PDF a BD) ---
         print("\n[>>> ETAPA 2: INGESTA DE DATOS <<<]")
-        bulletin_id = ingest_pdf(pdf_path, volcano_id)
+        bulletin_id = ingest_pdf(pdf_path, volcano_id, source_url)
         
         if not bulletin_id:
             raise Exception("Falló la extracción o guardado del texto del PDF.")
