@@ -39,38 +39,38 @@ def use_fallback_ai(volcano_name, alert_level):
     """Emergency Fallback Protocol ensures the pipeline continues if API quota is 0."""
     print("    [*] (Fallback) Activating emergency protocol: Using pre-calculated AI interpretation.")
     return f"""
-    EXPLANATION:
-    The current technical data for {volcano_name} indicates heightened volcanic activity, matching a {alert_level} status. This presents an elevated risk of ashfall and gas exposure in the surrounding areas, potentially disrupting daily life.
+    EXPLICACIÓN:
+    Los datos técnicos actuales para {volcano_name} indican una actividad volcánica elevada, correspondiente a un estado de {alert_level}. Esto representa un riesgo elevado de caída de ceniza y exposición a gases en las zonas circundantes, lo cual podría afectar las actividades cotidianas.
 
-    RECOMMENDATIONS:
-    - Wear N95 masks and protective eyewear when outdoors to prevent respiratory and eye irritation.
-    - Seal windows and doors with damp towels to minimize the ingress of volcanic ash into homes.
-    - Stay tuned to official IGEPN broadcasts and prepare an emergency kit with basic supplies.
+    RECOMENDACIONES:
+    - Usar mascarillas N95 y protección ocular al salir para prevenir irritación respiratoria y ocular.
+    - Sellar ventanas y puertas con toallas húmedas para minimizar el ingreso de ceniza volcánica a los hogares.
+    - Mantenerse informado a través de los boletines oficiales del IGEPN y preparar un kit de emergencia con suministros básicos.
     """
 
 def generate_ai_interpretation(volcano_name, alert_level, activity_type, emissions_flag):
     """Generates AI interpretation or falls back to emergency protocol."""
-    models_to_test = ["gemini-2.0-flash", "gemini-1.5-flash"]
+    models_to_test = ["gemini-3.6-flash", "gemini-2.5-flash"]
     emissions_context = "with ash and gas emissions" if emissions_flag else "without significant emissions"
     
     prompt = f"""
-    You are a disaster risk management expert from Ecuador. Your goal is to translate 
+    You are a disaster risk management expert from Ecuador. Your goal is to translate
     technical volcanic alerts into clear, citizen-friendly language.
-    
+
     Current Context:
     - Volcano: {volcano_name}
     - Technical Alert Level: {alert_level}
     - Activity: {activity_type} {emissions_context}.
-    
-    IMPORTANT: You must write the output entirely in ENGLISH using exactly this format:
-    
-    EXPLANATION:
-    (Write 2 simple sentences explaining what this technical data means for the local population).
-    
-    RECOMMENDATIONS:
-    - (Preventive action 1)
-    - (Preventive action 2)
-    - (Preventive action 3)
+
+    IMPORTANT: You must write the output entirely in SPANISH using exactly this format:
+
+    EXPLICACIÓN:
+    (Escribe 2 oraciones simples explicando qué significan estos datos técnicos para la población local).
+
+    RECOMENDACIONES:
+    - (Acción preventiva 1)
+    - (Acción preventiva 2)
+    - (Acción preventiva 3)
     """
     
     for model_name in models_to_test:
@@ -128,9 +128,9 @@ def process_interpretation(class_id):
     if not ai_response:
         return None
         
-    if "RECOMMENDATIONS:" in ai_response and "EXPLANATION:" in ai_response:
-        parts = ai_response.split("RECOMMENDATIONS:")
-        explanation = parts[0].replace("EXPLANATION:", "").strip()
+    if "RECOMENDACIONES:" in ai_response and "EXPLICACIÓN:" in ai_response:
+        parts = ai_response.split("RECOMENDACIONES:")
+        explanation = parts[0].replace("EXPLICACIÓN:", "").strip()
         recommendations = parts[1].strip()
         
         print("[*] Parsing successful. Saving interpretation to 'ai_alerts' table...")
