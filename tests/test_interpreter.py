@@ -8,10 +8,8 @@ def test_ai_interpreter():
     print(" TESTING AI INTERPRETER MODULE          ")
     print("========================================")
     
-    # Asumimos que la clasificación con ID 1 ya existe tras probar classifier.py
     class_id = 1 
     
-    # Ejecutamos la función maestra
     new_ai_id = process_interpretation(class_id)
     
     if new_ai_id:

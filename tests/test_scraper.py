@@ -5,10 +5,8 @@ def run_test():
     print(" INICIANDO PRUEBA DEL SCRAPER (IGEPN)   ")
     print("========================================")
     
-    # Usaremos el Reventador como volcán de prueba
     volcano_test = "Reventador"
     
-    # Ejecutamos la función
     file_path, file_name = get_latest_bulletin(volcano_test)
     
     print("\n========================================")
