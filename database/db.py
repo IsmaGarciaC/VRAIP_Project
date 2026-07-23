@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import pandas as pd
 
 # Define the path to the database file
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "vraip.db")
@@ -46,6 +47,7 @@ def init_db():
             id                    INTEGER PRIMARY KEY AUTOINCREMENT,
             bulletin_id           INTEGER NOT NULL,
             alert_level           TEXT NOT NULL,
+            alert_level_detected  INTEGER NOT NULL DEFAULT 1,
             surface_activity      TEXT,
             internal_activity     TEXT,
             ash_emissions         INTEGER DEFAULT 0,
@@ -68,6 +70,15 @@ def init_db():
         );
     """)
 
+    # Migrate pre-existing classifications tables that predate the
+    # alert_level_detected column (CREATE TABLE IF NOT EXISTS won't add it).
+    cursor.execute("PRAGMA table_info(classifications)")
+    existing_columns = [row[1] for row in cursor.fetchall()]
+    if "alert_level_detected" not in existing_columns:
+        cursor.execute(
+            "ALTER TABLE classifications ADD COLUMN alert_level_detected INTEGER NOT NULL DEFAULT 1"
+        )
+
     # Seed volcanoes only if the database is empty
     cursor.execute("SELECT count(*) FROM volcanoes")
     if cursor.fetchone()[0] == 0:
@@ -81,6 +92,24 @@ def init_db():
     conn.commit()
     conn.close()
     print("Database initialized successfully.")
+
+# Read-only helper for the future Chapter 5 dashboard.
+# Not called anywhere in the current pipeline (scraper/ingestion/classifier/interpreter).
+def get_bulletins_dataframe():
+    conn = get_connection()
+    query = """
+        SELECT
+            v.name AS volcano_name,
+            b.published_at,
+            c.alert_level
+        FROM bulletins b
+        JOIN volcanoes v ON b.volcano_id = v.id
+        LEFT JOIN classifications c ON c.bulletin_id = b.id
+        ORDER BY b.published_at DESC
+    """
+    df = pd.read_sql_query(query, conn)
+    conn.close()
+    return df
 
 # Call the function to initialize the database
 if __name__ == "__main__":
