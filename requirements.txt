@@ -1,5 +1,5 @@
 selenium
 webdriver-manager
 pdfplumber
-google-generativeai
+google-genai
 python-dotenv
