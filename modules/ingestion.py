@@ -3,19 +3,16 @@ import pdfplumber
 import sqlite3
 from datetime import datetime
 
-# Define the path to the database file
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "vraip.db")
+# Absolute path to the database file
+DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "vraip.db"))
 
-# Define a function to extract text from a PDF file
 def extract_text_from_pdf(pdf_path):
     """
     Extracts PDF text using pdfplumber.
     """
-    # Check if the file exists before attempting to open it.
     if not os.path.exists(pdf_path):
-        return f"Error: The file {pdf_path} does not exist."
+        raise FileNotFoundError(f"The file {pdf_path} does not exist.")
 
-    # Open the PDF file and extract text
     complete_text = ""
     try:
         with pdfplumber.open(pdf_path) as pdf:
@@ -25,14 +22,14 @@ def extract_text_from_pdf(pdf_path):
                     complete_text += extracted_text + "\n"
         return complete_text
 
-        # Handle any exceptions that occur during the extraction process
+    # Handle any exceptions that may occur during PDF processing
     except Exception as e:
-        return f"Error: Failed to extract text from {pdf_path}. Error: {e}"
+        raise Exception(f"Failed to extract text from {pdf_path}. Error: {e}")
 
-# Define a function to save the extracted text to a SQLite database
+# Function to save extracted text to a SQLite database
 def save_bulletin_to_db(volcano_id, raw_text, pdf_filename):
     """
-        Saves the bulletin data to a SQLite database.
+    Saves the extracted bulletin data to the SQLite database.
     """
     try:
         conn = sqlite3.connect(DB_PATH)
@@ -48,40 +45,39 @@ def save_bulletin_to_db(volcano_id, raw_text, pdf_filename):
             VALUES (?, ?, ?, ?, ?)
         """, (volcano_id, published_at, source_url, raw_text, pdf_filename))
 
-        # Commit the changes and close the connection
         conn.commit()
         bulletin_id = cursor.lastrowid
         conn.close()
 
         return bulletin_id
-    # Handle any exceptions that occur during the database operation
+
+    # Handle any exceptions that may occur during database operations
     except Exception as e:
-        print(f"Error: Failed to save bulletin data to the database. Error: {e}")
+        print(f"[-] Error: Failed to save bulletin data to the database. Error: {e}")
         return None
 
-# Local testing
-if __name__ == "__main__":
-    # Define the path to the PDF file
-    file_name = "boletin_prueba.pdf"
-    pdf_path = os.path.join(os.path.dirname(__file__), "..", "data", file_name)
-
-    # Extract text from the PDF
-    print(f"[*] Extracting text from {file_name}...")
-    text = extract_text_from_pdf(pdf_path)
-
-    # Check if the extraction was successful and proceed accordingly
-    if not text.startswith("Error"):
-        vocano_id = 3
-
-        print(f"[*] Saving bulletin to database...")
-        new_id = save_bulletin_to_db(vocano_id, text, file_name)
-
-        if new_id:
-            print(f"\n[*] Bulletin saved correctly in table bulletins with ID: {new_id}")
-            print(f"[*] Length of extracted text: {len(text)} characters")
-        else:
-            print("\n[-] Failed to save bulletin data.")
-    else:
-        print(text)
-
-
+# Function to ingest a PDF file into the database
+def ingest_pdf(pdf_path, volcano_id):
+    """
+    Master function to orchestrate text extraction and database ingestion.
+    Returns the new bulletin_id if successful, None otherwise.
+    """
+    file_name = os.path.basename(pdf_path)
+    print(f"[*] Extracting text from '{file_name}'...")
+    
+    # Extract text from the PDF file
+    try:
+        raw_text = extract_text_from_pdf(pdf_path)
+        print(f"[*] Text extracted successfully ({len(raw_text)} characters). Saving to DB...")
+        
+        bulletin_id = save_bulletin_to_db(volcano_id, raw_text, file_name)
+        
+        if bulletin_id:
+            print(f"[+] Bulletin ingested correctly in table 'bulletins' with ID: {bulletin_id}")
+            
+        return bulletin_id
+        
+    # Handle any exceptions that may occur during text extraction or database operations
+    except Exception as e:
+        print(f"[-] Ingestion failed: {e}")
+        return None
