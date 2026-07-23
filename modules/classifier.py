@@ -14,7 +14,7 @@ def get_bulletin_text(bulletin_id):
         conn.close()
         return result[0] if result else None
     except Exception as e:
-        print(f"Error retrieving bulletin text: {e}")
+        print(f"[-] Error retrieving bulletin text: {e}")
         return None
 
 def classify_risk(raw_text):
@@ -119,38 +119,29 @@ def save_classification(bulletin_id, data):
         conn.close()
         return class_id
     except Exception as e:
-        print(f"Error saving classification: {e}")
+        print(f"[-] Error saving classification: {e}")
         return None
 
-# Local testing function
-if __name__ == "__main__":
-    # Ajusta este ID al ID de prueba que tengas en tu base local
-    bulletin_id = 1 
-
-    print(f"[*] Searching for bulletin with ID: {bulletin_id} in the database...")
-    bulletin_text = get_bulletin_text(bulletin_id)
-
-    if bulletin_text:
-        print(f"\n[+] Bulletin text retrieved successfully.")
+def process_classification(bulletin_id):
+    """
+    Master orchestrator for the classifier module.
+    Extracts text, applies regex rules, and saves the structured data.
+    """
+    print(f"[*] Extracting raw text for Bulletin ID {bulletin_id}...")
+    raw_text = get_bulletin_text(bulletin_id)
+    
+    if not raw_text:
+        print("[-] Classifier Error: Text could not be loaded from DB.")
+        return None
         
-        # Recibimos el diccionario completo
-        results = classify_risk(bulletin_text)
-
-        print("\n" + "="*40)
-        print("Classification Results:")
-        print("="*40)
-        for key, value in results.items():
-            print(f"{key.replace('_', ' ').title()}: {value}")
-        print("="*40 + "\n")
-
-        print("[+] Saving classification result to the database...")
-
-        # Pasamos el diccionario a la nueva función de guardado
-        new_id = save_classification(bulletin_id, results)
-
-        if new_id:
-            print(f"\n[+] Classification saved successfully with Database Row ID: {new_id}")
-        else:
-            print("\n[-] Failed to save classification. Did you update the database schema?")
+    print("[*] Running regex classification engine...")
+    classification_data = classify_risk(raw_text)
+    
+    print("[*] Saving structured metrics to database...")
+    class_id = save_classification(bulletin_id, classification_data)
+    
+    if class_id:
+        print(f"[+] Classification generated successfully (Class ID: {class_id})")
+        return class_id
     else:
-        print(f"[-] Could not find bulletin text for ID {bulletin_id}. Make sure ingestion.py ran correctly first.")
+        return None
