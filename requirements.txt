@@ -4,3 +4,4 @@ pdfplumber
 google-genai
 python-dotenv
 pandas
+pytest

@@ -111,6 +111,17 @@ def get_bulletins_dataframe():
     conn.close()
     return df
 
+# Read-only helper used by main.py to orchestrate the pipeline over every
+# seeded volcano in a single invocation.
+def get_all_volcanoes():
+    """Returns list of (id, name) tuples for all seeded volcanoes."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name FROM volcanoes ORDER BY id")
+    result = cursor.fetchall()
+    conn.close()
+    return result
+
 # Call the function to initialize the database
 if __name__ == "__main__":
     init_db()
