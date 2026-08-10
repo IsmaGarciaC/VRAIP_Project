@@ -1,6 +1,7 @@
 import os
 import time
 import glob
+import shutil
 from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
@@ -14,6 +15,38 @@ from webdriver_manager.chrome import ChromeDriverManager
 # Absolute path to the directory containing the downloaded data
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
 
+# Previously downloaded PDFs are moved here instead of being deleted, so they
+# stay available for debugging a run that went wrong.
+ARCHIVE_DIR = os.path.join(DATA_DIR, "_archive")
+
+# Bundled offline/demo bulletin used by use_fallback(). It lives in DATA_DIR
+# alongside the downloads but is NOT a download, so it is never archived and
+# never counts as the "freshly downloaded" file.
+FALLBACK_NAME = "boletin_prueba.pdf"
+
+
+def archive_previous_downloads():
+    """
+    Moves every previously downloaded PDF out of DATA_DIR and into DATA_DIR/_archive.
+
+    This is what makes "newest file in DATA_DIR" a trustworthy signal: with the
+    directory cleared beforehand, any PDF present after the download step is
+    necessarily the file this run just downloaded, never a leftover belonging to
+    a different volcano. Archived names are prefixed with a timestamp because
+    Chrome reuses the same download name once the directory is empty, so plain
+    basenames would overwrite each other run after run.
+    """
+    os.makedirs(ARCHIVE_DIR, exist_ok=True)
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    for f in glob.glob(os.path.join(DATA_DIR, "*.pdf")):
+        name = os.path.basename(f)
+        if name == FALLBACK_NAME:
+            continue
+        shutil.move(f, os.path.join(ARCHIVE_DIR, f"{stamp}_{name}"))
+        print(f"[*] Archived previous download: '{name}'")
+
+
 def get_latest_bulletin(volcano_name):
     """
     Retrieves the latest bulletin for a given volcano from the IGEPN website.
@@ -24,6 +57,11 @@ def get_latest_bulletin(volcano_name):
 
     if not os.path.exists(DATA_DIR):
         os.makedirs(DATA_DIR)
+
+    # Clear leftovers BEFORE the download flow starts. Done outside the try block
+    # on purpose: if archiving fails we want a hard error, not a silent slide into
+    # the fallback while stale PDFs are still sitting in DATA_DIR.
+    archive_previous_downloads()
 
     # Robot Configuration
     chrome_options = Options()
@@ -116,7 +154,13 @@ def get_latest_bulletin(volcano_name):
         time.sleep(5)
 
         # --- STEP 6: File validation ---
-        pdf_files = glob.glob(os.path.join(DATA_DIR, "*.pdf"))
+        # DATA_DIR was emptied of downloads above, so anything matched here was
+        # downloaded by this run. The bundled fallback is excluded because it is
+        # always present and would otherwise masquerade as a fresh download.
+        pdf_files = [
+            f for f in glob.glob(os.path.join(DATA_DIR, "*.pdf"))
+            if os.path.basename(f) != FALLBACK_NAME
+        ]
         if not pdf_files:
             raise FileNotFoundError("The robot clicked download, but the file was not found.")
 
@@ -145,6 +189,5 @@ def get_latest_bulletin(volcano_name):
 def use_fallback():
     """Fallback Plan: Uses a local file if the government website fails or changes."""
     print("[*] (Fallback) Emergency protocol activated: Using local test file.")
-    fallback_name = "boletin_prueba.pdf"
-    fallback_path = os.path.join(DATA_DIR, fallback_name)
-    return fallback_path, fallback_name, "Local Fallback (boletin_prueba.pdf)"
+    fallback_path = os.path.join(DATA_DIR, FALLBACK_NAME)
+    return fallback_path, FALLBACK_NAME, f"Local Fallback ({FALLBACK_NAME})"

@@ -1,10 +1,20 @@
 import os
 import pdfplumber
 import sqlite3
+import unicodedata
 from datetime import datetime
 
 # Absolute path to the database file
 DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "vraip.db"))
+
+def normalize_text(text):
+    """
+    Lowercases and strips accents so bulletin text can be compared against a
+    volcano name regardless of casing or how the PDF encodes its diacritics
+    ('Volcán'/'VOLCAN', 'Sangay'/'SANGAY').
+    """
+    decomposed = unicodedata.normalize("NFKD", text.lower())
+    return "".join(c for c in decomposed if not unicodedata.combining(c))
 
 def extract_text_from_pdf(pdf_path):
     """
@@ -56,10 +66,14 @@ def save_bulletin_to_db(volcano_id, raw_text, pdf_filename, source_url):
         return None
 
 # Function to ingest a PDF file into the database
-def ingest_pdf(pdf_path, volcano_id, source_url="Local Ingestion (Offline)"):
+def ingest_pdf(pdf_path, volcano_id, volcano_name, source_url="Local Ingestion (Offline)"):
     """
     Master function to orchestrate text extraction and database ingestion.
     Returns the new bulletin_id if successful, None otherwise.
+
+    Raises ValueError if the extracted text does not mention volcano_name, which
+    means the PDF belongs to a different volcano (a stale or mismatched file) and
+    must never be stored under this volcano_id.
     """
     file_name = os.path.basename(pdf_path)
     print(f"[*] Extracting text from '{file_name}'...")
@@ -67,16 +81,26 @@ def ingest_pdf(pdf_path, volcano_id, source_url="Local Ingestion (Offline)"):
     # Extract text from the PDF file
     try:
         raw_text = extract_text_from_pdf(pdf_path)
-        print(f"[*] Text extracted successfully ({len(raw_text)} characters). Saving to DB...")
 
-        bulletin_id = save_bulletin_to_db(volcano_id, raw_text, file_name, source_url)
-        
-        if bulletin_id:
-            print(f"[+] Bulletin ingested correctly in table 'bulletins' with ID: {bulletin_id}")
-            
-        return bulletin_id
-        
-    # Handle any exceptions that may occur during text extraction or database operations
+    # Handle any exceptions that may occur during text extraction
     except Exception as e:
         print(f"[-] Ingestion failed: {e}")
         return None
+
+    # Content-level sanity check. Deliberately raises instead of returning None:
+    # a mismatch is a data-integrity problem, and main.py's run_pipeline_for_volcano
+    # already logs the full traceback and isolates the failure to this volcano.
+    if normalize_text(volcano_name) not in normalize_text(raw_text):
+        raise ValueError(
+            f"Extracted text does not mention '{volcano_name}' — "
+            f"likely mismatched or stale file: {pdf_path}"
+        )
+
+    print(f"[*] Text extracted successfully ({len(raw_text)} characters). Saving to DB...")
+
+    bulletin_id = save_bulletin_to_db(volcano_id, raw_text, file_name, source_url)
+
+    if bulletin_id:
+        print(f"[+] Bulletin ingested correctly in table 'bulletins' with ID: {bulletin_id}")
+
+    return bulletin_id

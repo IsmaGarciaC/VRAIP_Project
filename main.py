@@ -54,7 +54,7 @@ def run_pipeline_for_volcano(volcano_name, volcano_id):
 
         # Stage 2: Ingestion
         print("\n[>>> STAGE 2: TEXT EXTRACTION <<<]")
-        bulletin_id = ingest_pdf(pdf_path, volcano_id, source_url)
+        bulletin_id = ingest_pdf(pdf_path, volcano_id, volcano_name, source_url)
 
         if not bulletin_id:
             raise Exception("The text extraction process failed.")
