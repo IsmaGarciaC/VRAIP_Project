@@ -26,6 +26,11 @@ from modules.classifier import classify_risk
         ("Nivel de Alerta: Verde", "Green Alert"),
         # Blanca is treated as equivalent to Verde by project design decision.
         ("Nivel de Alerta: Blanca", "Green Alert"),
+        # Masculine forms ("Nivel" is masculine, so some bulletins agree the
+        # color word with it instead of with "Alerta") must match too.
+        ("Nivel de Alerta: Rojo", "Red Alert"),
+        ("Nivel de Alerta: Amarillo", "Yellow Alert"),
+        ("Nivel de Alerta - SGR: Blanco", "Green Alert"),
     ],
 )
 def test_alert_level_detected(text, expected_level):

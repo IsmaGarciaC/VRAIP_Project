@@ -36,16 +36,16 @@ def classify_risk(raw_text):
     alert_match = re.search(r'nivel de alerta\s*[-–:]*\s*(?:sgr)?:?[\s]*([a-záéíóú]+)', text_lower)
     if alert_match:
         raw_alert = alert_match.group(1)
-        if "roja" in raw_alert:
+        if "roj" in raw_alert:
             alert_level = "Red Alert"
             alert_level_detected = True
         elif "naranja" in raw_alert:
             alert_level = "Orange Alert"
             alert_level_detected = True
-        elif "amarilla" in raw_alert:
+        elif "amarill" in raw_alert:
             alert_level = "Yellow Alert"
             alert_level_detected = True
-        elif "blanca" in raw_alert or "verde" in raw_alert:
+        elif "blanc" in raw_alert or "verde" in raw_alert:
             alert_level = "Green Alert"
             alert_level_detected = True
 
