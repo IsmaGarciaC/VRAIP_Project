@@ -13,8 +13,13 @@ if not GEMINI_API_KEY or GEMINI_API_KEY == "your_gemini_api_key_here":
 # Initialize the Google GenAI Client
 client = genai.Client(api_key=GEMINI_API_KEY)
 
-# Absolute path to the database file
-DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "vraip.db"))
+# Absolute path to the database file.
+# VRAIP_DB_PATH overrides it so verification runs can be pointed at a throwaway
+# copy instead of writing into the live database.
+DB_PATH = os.getenv(
+    "VRAIP_DB_PATH",
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "vraip.db")),
+)
 
 def get_classification_data(class_id):
     """Retrieves classification data joined with the volcano's name from the database."""

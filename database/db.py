@@ -2,8 +2,13 @@ import sqlite3
 import os
 import pandas as pd
 
-# Define the path to the database file
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "vraip.db")
+# Define the path to the database file.
+# VRAIP_DB_PATH overrides it so verification runs can be pointed at a throwaway
+# copy instead of writing into the live database.
+DB_PATH = os.getenv(
+    "VRAIP_DB_PATH",
+    os.path.join(os.path.dirname(__file__), "..", "data", "vraip.db"),
+)
 
 # Define some sample volcano data
 VOLCANOES = [

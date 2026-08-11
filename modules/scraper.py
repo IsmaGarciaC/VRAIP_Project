@@ -24,6 +24,71 @@ ARCHIVE_DIR = os.path.join(DATA_DIR, "_archive")
 # never counts as the "freshly downloaded" file.
 FALLBACK_NAME = "boletin_prueba.pdf"
 
+# --- Results list selectors -------------------------------------------------
+# The IGEPN results list mixes file types (PDF reports and PNG infographics)
+# in one list sorted by publication date, newest first. Every row renders the
+# same button with the same "Descargar Informe" label, and the row classes are
+# identical too, so the ONLY machine-readable type signal is the badge image in
+# the row's "logo" cell, whose filename encodes the extension:
+#     /igepn-registro-web/images/extensiones/PDFB.png  -> PDF report
+#     /igepn-registro-web/images/extensiones/PNGB.png  -> PNG infographic
+# Matching on "/extensiones/pdf" (lowercased src) rather than the exact
+# "PDFB.png" keeps this working if the site ever ships a different size/variant
+# of the same badge.
+RESULT_ROW_XPATH = "//li[contains(@class, 'ui-dataview-row')]"
+TYPE_BADGE_XPATH = ".//td[contains(@class, 'logo')]//img"
+PDF_BADGE_MARKER = "/extensiones/pdf"
+DOWNLOAD_BUTTON_XPATH = ".//button[.//span[contains(text(), 'Descargar Informe')]]"
+REPORT_NAME_XPATH = ".//td[contains(@class, 'detail')]//tr[1]/td[2]//label"
+
+
+def _report_name(row):
+    """Best-effort read of a result row's 'Nombre:' value, for logging only."""
+    labels = row.find_elements(By.XPATH, REPORT_NAME_XPATH)
+    return labels[0].text.strip() if labels else "(unnamed report)"
+
+
+def find_first_pdf_download_button(driver, volcano_name, current_year):
+    """
+    Returns the 'Descargar Informe' button of the newest PDF-type row on the
+    results page.
+
+    Rows are already sorted newest-first by the site, so the first PDF-type row
+    in document order is the latest PDF report. Non-PDF rows are skipped rather
+    than clicked: downloading a PNG infographic leaves DATA_DIR without any new
+    *.pdf, which used to send the pipeline into use_fallback() with a stale
+    bulletin instead of reporting the real problem.
+
+    Raises FileNotFoundError if no row on the results page is PDF-type.
+    """
+    rows = driver.find_elements(By.XPATH, RESULT_ROW_XPATH)
+    print(f"[*] {len(rows)} result(s) listed. Looking for the newest PDF-type report...")
+
+    for position, row in enumerate(rows, start=1):
+        badges = row.find_elements(By.XPATH, TYPE_BADGE_XPATH)
+        badge_src = (badges[0].get_attribute("src") or "").lower() if badges else ""
+
+        if PDF_BADGE_MARKER not in badge_src:
+            print(f"[*] Skipping result #{position} (not a PDF): '{_report_name(row)}'")
+            continue
+
+        buttons = row.find_elements(By.XPATH, DOWNLOAD_BUTTON_XPATH)
+        if not buttons:
+            print(f"[*] Skipping result #{position} (PDF, but no download button).")
+            continue
+
+        print(f"[+] PDF report selected: result #{position} '{_report_name(row)}'")
+        return buttons[0]
+
+    # Distinct from the "clicked download but no file appeared" error raised
+    # later, so the logs separate "wrong file type in results" from "the
+    # download never completed".
+    raise FileNotFoundError(
+        f"No PDF-type report found in IG-EPN results for {volcano_name} "
+        f"in {current_year} (scanned {len(rows)} most recent result(s); "
+        f"all were non-PDF, e.g. PNG infographics)."
+    )
+
 
 def archive_previous_downloads():
     """
@@ -144,8 +209,12 @@ def get_latest_bulletin(volcano_name):
         search_button.click()
 
         # --- STEP 5: Download ---
+        # Wait for the results list to be interactive, then pick the newest
+        # PDF-type row instead of blindly taking the first button on the page:
+        # the list interleaves PDF reports with PNG infographics.
         print("[*] Search completed. Looking for the download button...")
-        download_button = wait.until(EC.element_to_be_clickable((By.XPATH, "(//span[contains(text(), 'Descargar Informe')])[1]")))
+        wait.until(EC.element_to_be_clickable((By.XPATH, "//span[contains(text(), 'Descargar Informe')]")))
+        download_button = find_first_pdf_download_button(driver, volcano_name, current_year)
         driver.execute_script("arguments[0].scrollIntoView({behavior: 'auto', block: 'center'});", download_button)
         time.sleep(1)
         download_button.click()

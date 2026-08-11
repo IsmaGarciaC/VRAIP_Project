@@ -2,7 +2,12 @@ import sqlite3
 import os
 import re
 
-DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "vraip.db"))
+# VRAIP_DB_PATH overrides the default so verification runs can be pointed at a
+# throwaway copy instead of writing into the live database.
+DB_PATH = os.getenv(
+    "VRAIP_DB_PATH",
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "vraip.db")),
+)
 
 def get_bulletin_text(bulletin_id):
     """Get the text of a bulletin from the database."""

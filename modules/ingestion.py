@@ -4,8 +4,13 @@ import sqlite3
 import unicodedata
 from datetime import datetime
 
-# Absolute path to the database file
-DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "vraip.db"))
+# Absolute path to the database file.
+# VRAIP_DB_PATH overrides it so verification runs can be pointed at a throwaway
+# copy instead of writing into the live database.
+DB_PATH = os.getenv(
+    "VRAIP_DB_PATH",
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "vraip.db")),
+)
 
 def normalize_text(text):
     """
