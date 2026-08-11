@@ -5,3 +5,5 @@ google-genai
 python-dotenv
 pandas
 pytest
+streamlit>=1.50
+plotly>=6.0

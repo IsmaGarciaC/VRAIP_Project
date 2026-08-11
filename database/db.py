@@ -116,6 +116,72 @@ def get_bulletins_dataframe():
     conn.close()
     return df
 
+# Read-only helper backing the Streamlit dashboard (app.py).
+# Returns one row per bulletin with its volcano, classification and AI alert
+# joined in. Never writes.
+def get_dashboard_dataframe():
+    """Full pipeline join for the dashboard: volcanoes -> bulletins -> classifications -> ai_alerts.
+
+    Exactly one row per bulletin: where a bulletin has several classifications, or a
+    classification several ai_alerts (re-runs of the pipeline), only the most recent
+    row of each is joined. Volcanoes with no ingested bulletins do not appear here --
+    use get_volcanoes_dataframe() for the complete monitored list.
+
+    Note: published_at is the INGESTION timestamp, not the bulletin's stated
+    publication date, and source_url is the portal entry point rather than a
+    document-specific permalink.
+    """
+    conn = get_connection()
+    query = """
+        SELECT
+            v.id           AS volcano_id,
+            v.name         AS volcano_name,
+            v.latitude     AS latitude,
+            v.longitude    AS longitude,
+            v.igepn_code   AS igepn_code,
+            b.id           AS bulletin_id,
+            b.published_at AS published_at,
+            b.source_url   AS source_url,
+            b.pdf_filename AS pdf_filename,
+            c.alert_level          AS alert_level,
+            c.alert_level_detected AS alert_level_detected,
+            c.surface_activity     AS surface_activity,
+            c.internal_activity    AS internal_activity,
+            c.ash_emissions        AS ash_emissions,
+            c.gas_emissions        AS gas_emissions,
+            c.incandescence        AS incandescence,
+            c.lahars_detected      AS lahars_detected,
+            c.explosions_count     AS explosions_count,
+            c.max_column_height_m  AS max_column_height_m,
+            a.explanation     AS explanation,
+            a.recommendations AS recommendations,
+            a.generated_at    AS generated_at
+        FROM bulletins b
+        JOIN volcanoes v ON b.volcano_id = v.id
+        LEFT JOIN classifications c
+               ON c.id = (SELECT MAX(id) FROM classifications WHERE bulletin_id = b.id)
+        LEFT JOIN ai_alerts a
+               ON a.id = (SELECT MAX(id) FROM ai_alerts WHERE classification_id = c.id)
+        ORDER BY b.published_at DESC, b.id DESC
+    """
+    df = pd.read_sql_query(query, conn)
+    conn.close()
+    return df
+
+# Read-only helper backing the dashboard map: every monitored volcano, including
+# those that have no successfully ingested bulletin yet.
+def get_volcanoes_dataframe():
+    """Returns all seeded volcanoes with their coordinates, as a DataFrame."""
+    conn = get_connection()
+    query = """
+        SELECT id AS volcano_id, name AS volcano_name, latitude, longitude, igepn_code
+        FROM volcanoes
+        ORDER BY id
+    """
+    df = pd.read_sql_query(query, conn)
+    conn.close()
+    return df
+
 # Read-only helper used by main.py to orchestrate the pipeline over every
 # seeded volcano in a single invocation.
 def get_all_volcanoes():

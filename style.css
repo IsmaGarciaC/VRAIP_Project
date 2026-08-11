@@ -1,1 +1,57 @@
-#style.css file
+/* VRAIP dashboard styles -- alert-level badges.
+   Loaded by app.py via st.markdown(<style>...); safe to edit without touching app.py.
+
+   The four alert colors are status colors: they are fixed (identical in light and
+   dark mode) and are NEVER the only carrier of meaning. Green vs red is
+   indistinguishable under deuteranopia, so every badge also spells out the level
+   name and carries a distinct glyph. Ink inside each fill is chosen by the fill's
+   luminance so the text always clears contrast. */
+
+.vraip-badge {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.5;
+    white-space: nowrap;
+    letter-spacing: 0.01em;
+}
+
+.vraip-badge--verde     { background: #0ca30c; color: #ffffff; }
+.vraip-badge--amarilla  { background: #fab219; color: #0b0b0b; }
+.vraip-badge--naranja   { background: #ec835a; color: #0b0b0b; }
+.vraip-badge--roja      { background: #d03b3b; color: #ffffff; }
+.vraip-badge--sin-datos { background: #898781; color: #ffffff; }
+
+/* Badge sized for the detail view header. */
+.vraip-badge--grande {
+    font-size: 1rem;
+    padding: 0.3rem 0.9rem;
+}
+
+/* Status-card internals. The card frame itself is st.container(border=True). */
+.vraip-card-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0 0 0.35rem 0;
+}
+
+.vraip-card-meta {
+    font-size: 0.8rem;
+    color: #898781;
+    margin: 0.4rem 0 0.2rem 0;
+}
+
+.vraip-card-summary {
+    font-size: 0.88rem;
+    line-height: 1.45;
+    margin: 0;
+}
+
+/* Source-reference block in the detail view. */
+.vraip-source {
+    font-size: 0.85rem;
+    line-height: 1.6;
+    word-break: break-word;
+}
