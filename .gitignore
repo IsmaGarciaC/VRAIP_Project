@@ -26,3 +26,9 @@ data/*.pdf
 data/*.png
 
 logs/
+
+data/
+
+evidence/
+CLAUDE.md
+data/**/*.pdf
