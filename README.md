@@ -1,5 +1,4 @@
-# VRAIP — Volcanic Risk AI Pipeline
-
+# VRAIP — (Volcanic Risk Advisory & Alert Interpretation Platform
 ![Python](https://img.shields.io/badge/python-3.x-blue) ![License](https://img.shields.io/badge/license-academic--project-lightgrey)
 
 VRAIP is a pipeline that scrapes official volcanic activity bulletins published by
